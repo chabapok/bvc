@@ -126,12 +126,13 @@ public class DirListener {
                 
                 if (event.kind() == StandardWatchEventKinds.OVERFLOW){
                     System.out.println("OVERFLOW!!!");
-                }
-                
-                if (!watchKey.reset()) {
-                    watchKey.cancel();
-                }
+                }                
             }
+            
+            if (!watchKey.reset()) {
+                watchKey.cancel();
+            }
+
         }
 
 
