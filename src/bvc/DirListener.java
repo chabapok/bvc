@@ -86,6 +86,10 @@ public class DirListener {
             WatchKey watchKey = watcher.take();
             Path start = patchs.get(watchKey);
             
+            if (start==null){
+                System.out.println("ERROR! try get Path by object "+watchKey);
+            }
+            
             List<WatchEvent<?>> events = watchKey.pollEvents();
             for (WatchEvent event : events) {
                 
@@ -156,7 +160,7 @@ public class DirListener {
         patchs.remove(key);
         keys.remove(key.toString());
         key.cancel();
-        //System.out.println("del dir "+p.toString()+"  key "+key);
+        System.out.println("del dir "+p.toString()+"  key "+key);
         
         scheduleSnapshot();
     }
