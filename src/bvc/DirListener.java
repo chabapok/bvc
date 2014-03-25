@@ -42,10 +42,8 @@ public class DirListener {
     Path backDir = Paths.get("/tmp/2");
     Path listDir = Paths.get("/tmp/4");
     long delay = 3;
+    boolean copyOnStart = false;
     
-    DirListener(){
-         
-    }
     
     
     void init() throws IOException{
@@ -80,14 +78,10 @@ public class DirListener {
     
 
     void start() throws IOException, InterruptedException {
-        /*
-        WatchKey key = listDir.register(watcher, 
-                StandardWatchEventKinds.ENTRY_CREATE,
-                StandardWatchEventKinds.ENTRY_DELETE, 
-                StandardWatchEventKinds.ENTRY_MODIFY);
-
-        patchs.put(key, listDir);
-        */
+        
+        init();
+        
+        if (copyOnStart) scheduleSnapshot();
         
         for (;;) {
 
