@@ -23,8 +23,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -100,7 +98,7 @@ public class DirListener {
                     }else{
                         onCreateFile(full);
                     }
-                }
+                } else
                 
                 if (event.kind() == StandardWatchEventKinds.ENTRY_DELETE) {
                     WatchKey testKey = keys.get(full.toString());
@@ -110,17 +108,25 @@ public class DirListener {
                     }else{
                         onDelFile(full);
                     }
-                }
+                } else
                 
                 if (event.kind() == StandardWatchEventKinds.ENTRY_MODIFY) {
-                    if (true){
+                    WatchKey testKey = keys.get(full.toString());
+                    boolean dir = testKey!=null;
+                    if (dir){
                         onModifyDir(full);
                     }else{
                         onModifyFile(full);
                     }
                 }
                 
-                if (!watchKey.reset()) break;
+                if (event.kind() == StandardWatchEventKinds.OVERFLOW){
+                    System.out.println("OVERFLOW!!!");
+                }
+                
+                if (!watchKey.reset()) {
+                    watchKey.cancel();
+                }
             }
         }
 
@@ -129,7 +135,6 @@ public class DirListener {
 
     
     private void onCreateDir(Path full, WatchService watcher) throws IOException {
-        System.out.println("create dir "+full.toString());
         WatchKey dirKey = full.register(watcher,
                 StandardWatchEventKinds.ENTRY_CREATE,
                 StandardWatchEventKinds.ENTRY_DELETE,
@@ -137,7 +142,7 @@ public class DirListener {
         
         keys.put(full.toString(), dirKey);
         patchs.put(dirKey, full);
-        
+        //System.out.println("create dir "+full.toString()+" "+dirKey);
         scheduleSnapshot();
     }
 
@@ -151,7 +156,7 @@ public class DirListener {
         patchs.remove(key);
         keys.remove(key.toString());
         key.cancel();
-        System.out.println("del dir "+p.toString());
+        //System.out.println("del dir "+p.toString()+"  key "+key);
         
         scheduleSnapshot();
     }
@@ -196,13 +201,13 @@ public class DirListener {
     
     DateFormat df = new SimpleDateFormat("yyyy.MM.dd_HH:mm:ss");
     private void makeSnapshot() throws IOException{
-        Path dir = backDir.resolve(df.format(new Date()));
+        final Path dir = backDir.resolve(df.format(new Date()));
         
         FileVisitor<Path> maker = new FileVisitor<Path>() {
 
             @Override
             public FileVisitResult preVisitDirectory(Path fullSrc, BasicFileAttributes attrs) throws IOException {
-                System.out.println("visit dir "+dir.toString());
+                //System.out.println("visit dir "+dir.toString());
                 Path relSrc = listDir.relativize(fullSrc);
                 Path fullDest = dir.resolve(relSrc);
                 fullDest.toFile().mkdirs();        
@@ -211,7 +216,7 @@ public class DirListener {
 
             @Override
             public FileVisitResult visitFile(Path fileSrc, BasicFileAttributes attrs) throws IOException {
-                System.out.println("visit file "+fileSrc.toString());
+                //System.out.println("visit file "+fileSrc.toString());
                 Path relSrc = listDir.relativize(fileSrc);
                 Path fullDest = dir.resolve(relSrc);
                 Files.copy(fileSrc, fullDest, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
