@@ -224,13 +224,13 @@ public class DirListener {
         
         final Path pathFrom = finded;
         final Path pathTo = backDir[i];
-        
+        final Date date = new Date();
         final Runnable task =new Runnable(){
             @Override
             public void run() {
                 synchronized(DirListener.this){sf = null;}
                 try {
-                    makeSnapshot(pathFrom, pathTo);
+                    makeSnapshot(pathFrom, pathTo, date);
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
@@ -247,8 +247,8 @@ public class DirListener {
     
     DateFormat df = new SimpleDateFormat("yyyy.MM.dd_HH:mm:ss");
     
-    private void makeSnapshot(final Path from, final Path to) throws IOException{
-        final Path dir = to.resolve(df.format(new Date()));
+    private void makeSnapshot(final Path from, final Path to, Date date) throws IOException{
+        final Path dir = to.resolve(df.format(date));
         
         FileVisitor<Path> maker = new FileVisitor<Path>() {
 
