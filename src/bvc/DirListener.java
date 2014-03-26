@@ -84,13 +84,16 @@ public class DirListener {
         for (;;) {
 
             WatchKey watchKey = watcher.take();
+            List<WatchEvent<?>> events = watchKey.pollEvents();
+            
             Path start = patchs.get(watchKey);
             
             if (start==null){
-                System.out.println("ERROR! try get Path by object "+watchKey);
+                System.err.println("ERROR! try get Path by object "+watchKey+" Sequence of filesystem event is reordered!");
+                watchKey.reset();
+                continue;
             }
             
-            List<WatchEvent<?>> events = watchKey.pollEvents();
             for (WatchEvent event : events) {
                 
                 Path full = start.resolve( (Path) event.context() );
