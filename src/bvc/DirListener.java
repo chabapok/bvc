@@ -23,6 +23,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -44,6 +46,7 @@ public class DirListener {
     
     boolean[] copyOnStart = new boolean[]{false, false};
     
+    Pattern[] ignores;
     
     
     void init() throws IOException{
@@ -106,10 +109,19 @@ public class DirListener {
                 continue;
             }
             
+            newEvent:
             for (WatchEvent event : events) {
-                
                 Path full = start.resolve( (Path) event.context() );
-                                
+                String fullPath = full.toString();
+                for(Pattern ignorPattern: ignores){
+                    //System.out.println("try pattern "+ignorPattern.toString());
+                    Matcher m = ignorPattern.matcher(fullPath);
+                    if (m.matches()){
+                      //  System.out.println("skip "+fullPath+" by "+ignorPattern.toString());
+                        continue newEvent;
+                    }
+                }
+                
                 if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
                     boolean dir = full.toFile().isDirectory();
                     if (dir){
