@@ -37,16 +37,24 @@ public class DirListener {
     
     WatchService watcher;
     
-    Path backDir = Paths.get("/tmp/2");
-    Path listDir = Paths.get("/tmp/4");
-    long delay = 3;
-    boolean copyOnStart = false;
+    Path[] backDir = new Path[]{Paths.get("/tmp/2"), Paths.get("/tmp/a")};
+    Path[] listDir = new Path[]{Paths.get("/tmp/4"), Paths.get("/tmp/b")};
+    
+    long[] delay = new long[]{3, 2};
+    
+    boolean[] copyOnStart = new boolean[]{false, false};
     
     
     
     void init() throws IOException{
-        watcher = listDir.getFileSystem().newWatchService();
+        watcher = Paths.get("/").getFileSystem().newWatchService();
         
+        for(Path p: listDir){
+            init(p);
+        }
+    }
+    
+    void init(Path from) throws IOException{
         FileVisitor<Path> maker = new FileVisitor<Path>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
@@ -71,7 +79,7 @@ public class DirListener {
             public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException { return FileVisitResult.CONTINUE; }
         };
         
-        Files.walkFileTree(listDir, maker);
+        Files.walkFileTree(from, maker);
     }
     
 
@@ -79,7 +87,11 @@ public class DirListener {
         
         init();
         
-        if (copyOnStart) scheduleSnapshot();
+        int i=0;
+        for(boolean b:copyOnStart){
+            if (b) scheduleSnapshot(listDir[i]);
+            i++;
+        }
         
         for (;;) {
 
@@ -151,12 +163,12 @@ public class DirListener {
         keys.put(full.toString(), dirKey);
         patchs.put(dirKey, full);
         //System.out.println("create dir "+full.toString()+" "+dirKey);
-        scheduleSnapshot();
+        scheduleSnapshot(full);
     }
 
     
     private void onCreateFile(Path full) throws IOException {
-        scheduleSnapshot();
+        scheduleSnapshot(full);
     }
 
     private void onDelDir(WatchKey key) throws IOException {
@@ -166,33 +178,47 @@ public class DirListener {
         key.cancel();
         System.out.println("del dir "+p.toString()+"  key "+key);
         
-        scheduleSnapshot();
+        scheduleSnapshot(p);
     }
 
     private void onDelFile(Path full) throws IOException {
-        scheduleSnapshot();
+        scheduleSnapshot(full);
     }
 
     private void onModifyDir(Path full) throws IOException {
-        scheduleSnapshot();
+        scheduleSnapshot(full);
     }
 
     private void onModifyFile(Path full) throws IOException {
-        scheduleSnapshot();
+        scheduleSnapshot(full);
     }
     
     
     
     private ScheduledFuture sf;
     
-    private void scheduleSnapshot() throws IOException{
+    private void scheduleSnapshot(Path p) throws IOException{
+        String insidePath = p.toString();
+        Path finded=null;
+        int i=0;
+        for(Path v: listDir){
+            String str = v.toString();
+            if (insidePath.startsWith(str)){
+                finded=v;
+                break;
+            }
+            i++;
+        }
+        
+        final Path pathFrom = finded;
+        final Path pathTo = backDir[i];
         
         final Runnable task =new Runnable(){
             @Override
             public void run() {
                 synchronized(DirListener.this){sf = null;}
                 try {
-                    makeSnapshot();
+                    makeSnapshot(pathFrom, pathTo);
                 } catch (IOException ex) {
                     ex.printStackTrace();
                 }
@@ -201,22 +227,23 @@ public class DirListener {
         
         synchronized(this){
             if (sf!=null) sf.cancel(false);
-            sf = executor.schedule(task, delay, TimeUnit.SECONDS);
+            sf = executor.schedule(task, delay[i], TimeUnit.SECONDS);
         }
 
     }
     
     
     DateFormat df = new SimpleDateFormat("yyyy.MM.dd_HH:mm:ss");
-    private void makeSnapshot() throws IOException{
-        final Path dir = backDir.resolve(df.format(new Date()));
+    
+    private void makeSnapshot(final Path from, final Path to) throws IOException{
+        final Path dir = to.resolve(df.format(new Date()));
         
         FileVisitor<Path> maker = new FileVisitor<Path>() {
 
             @Override
             public FileVisitResult preVisitDirectory(Path fullSrc, BasicFileAttributes attrs) throws IOException {
                 //System.out.println("visit dir "+dir.toString());
-                Path relSrc = listDir.relativize(fullSrc);
+                Path relSrc = from.relativize(fullSrc);
                 Path fullDest = dir.resolve(relSrc);
                 fullDest.toFile().mkdirs();        
                 return FileVisitResult.CONTINUE;
@@ -225,7 +252,7 @@ public class DirListener {
             @Override
             public FileVisitResult visitFile(Path fileSrc, BasicFileAttributes attrs) throws IOException {
                 //System.out.println("visit file "+fileSrc.toString());
-                Path relSrc = listDir.relativize(fileSrc);
+                Path relSrc = from.relativize(fileSrc);
                 Path fullDest = dir.resolve(relSrc);
                 Files.copy(fileSrc, fullDest, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
                 return FileVisitResult.CONTINUE;
@@ -238,7 +265,7 @@ public class DirListener {
             public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException { return FileVisitResult.CONTINUE; }
         };
         
-        Files.walkFileTree(listDir, maker);
+        Files.walkFileTree(from, maker);
     }
     
     
