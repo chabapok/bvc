@@ -14,4 +14,8 @@ Conceived as a tool to versioning binaries in production.
 
 Задумана как утилита для безопасного обновления бинарников в продакшене.
 
+
+to run:
+java -jar bvc.jar bvc.conf
+
 author Pepeleichenko A.V.
