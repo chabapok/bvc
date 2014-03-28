@@ -104,7 +104,7 @@ public class DirListener {
             Path start = patchs.get(watchKey);
             
             if (start==null){
-                System.err.println("ERROR! try get Path by object "+watchKey+" Sequence of filesystem event is reordered!");
+                //System.err.println("ERROR! try get Path by object "+watchKey+" Sequence of filesystem event is reordered!");
                 watchKey.reset();
                 continue;
             }
@@ -188,7 +188,7 @@ public class DirListener {
         patchs.remove(key);
         keys.remove(key.toString());
         key.cancel();
-        System.out.println("del dir "+p.toString()+"  key "+key);
+       // System.out.println("del dir "+p.toString()+"  key "+key);
         
         scheduleSnapshot(p);
     }
