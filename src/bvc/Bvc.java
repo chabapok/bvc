@@ -30,15 +30,23 @@ public class Bvc {
         ArrayList<Boolean> copyOnStart = new ArrayList();
         
         ArrayList<Pattern> ignores = new ArrayList();
+        ArrayList<Pattern> noCopy = new ArrayList();
+        
         try( BufferedReader br = new BufferedReader(new FileReader(args[0]))){
             String line;
             while ((line = br.readLine()) != null) {
                if ( line.startsWith("#") ) continue;
                
-               
+               //not wach files/dirs change
                if (line.toLowerCase().startsWith("ignore ")){
                    line = line.substring(7).trim();
                    ignores.add( Pattern.compile(line) );
+                   continue;
+               }
+               
+               if (line.toLowerCase().startsWith("nocopy ")){
+                   line = line.substring(7).trim();
+                   noCopy.add( Pattern.compile(line) );
                    continue;
                }
                
@@ -80,6 +88,7 @@ public class Bvc {
         for(int i=0; i<sz; i++){dirListener.copyOnStart[i] = copyOnStart.get(i);}
         
         dirListener.ignores = ignores.toArray(new Pattern[0]);
+        dirListener.noCopy = noCopy.toArray(new Pattern[0]);
         
         dirListener.start();
     }

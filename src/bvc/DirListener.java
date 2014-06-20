@@ -47,7 +47,7 @@ public class DirListener {
     boolean[] copyOnStart = new boolean[]{false, false};
     
     Pattern[] ignores;
-    
+    Pattern[] noCopy;
     
     void init() throws IOException{
         watcher = Paths.get("/").getFileSystem().newWatchService();
@@ -264,8 +264,20 @@ public class DirListener {
             @Override
             public FileVisitResult visitFile(Path fileSrc, BasicFileAttributes attrs) throws IOException {
                 //System.out.println("visit file "+fileSrc.toString());
+                String src = fileSrc.toString();
                 Path relSrc = from.relativize(fileSrc);
                 Path fullDest = dir.resolve(relSrc);
+                
+                for(Pattern ignorPattern: noCopy){
+                    //System.out.println("try pattern "+ignorPattern.toString());
+                    Matcher m = ignorPattern.matcher(src);
+                    if (m.matches()){
+                        //System.out.println("Skip copy "+src+" -> "+fullDest.toString() );
+                        return FileVisitResult.CONTINUE;
+                    }
+                }
+
+                
                 Files.copy(fileSrc, fullDest, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
                 return FileVisitResult.CONTINUE;
             }
